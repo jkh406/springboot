@@ -29,7 +29,7 @@ import com.anbtech.webffice.com.vo.LoginVO;
 
 public class AuthenticInterceptor extends WebContentInterceptor {
 	
-	private final Logger log = LoggerFactory.getLogger(CustomAuthenticInterceptor.class);
+	private final Logger log = LoggerFactory.getLogger(AuthenticInterceptor.class);
 
 	/**
 	 * 세션에 계정정보(LoginVO)가 있는지 여부로 인증 여부를 체크한다.
@@ -41,6 +41,7 @@ public class AuthenticInterceptor extends WebContentInterceptor {
 		LoginVO loginVO = (LoginVO) WebfficeUserDetailsHelper.getAuthenticatedUser();
 
 		if (loginVO.getId() != null) {
+			System.out.print("AuthenticInterceptor sessionID"+loginVO.getId());
 			
 			log.debug("AuthenticInterceptor sessionID "+loginVO.getId());
 			log.debug("AuthenticInterceptor ================== ");

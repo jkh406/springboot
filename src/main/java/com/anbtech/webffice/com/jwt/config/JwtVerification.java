@@ -28,7 +28,8 @@ public class JwtVerification {
 		
 		// step 1. request header에서 토큰을 가져온다.
 		String jwtToken = WebfficeStringUtil.isNullToString(request.getHeader("authorization"));
-		
+
+		log.info("===>>> jwtToken = " + jwtToken);
 		// step 2.비교를 위해 loginVO를 가져옴
 		LoginVO loginVO = (LoginVO) WebfficeUserDetailsHelper.getAuthenticatedUser();
 		

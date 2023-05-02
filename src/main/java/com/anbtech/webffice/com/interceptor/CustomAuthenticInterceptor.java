@@ -35,6 +35,7 @@ public class CustomAuthenticInterceptor extends HandlerInterceptorAdapter {
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
 
 		HttpSession session = request.getSession();
+		System.out.print("CustomAuthenticInterceptor sessionID"+session.getId());
 		log.debug("CustomAuthenticInterceptor sessionID "+session.getId());
 		log.debug("CustomAuthenticInterceptor ================== ");
 		

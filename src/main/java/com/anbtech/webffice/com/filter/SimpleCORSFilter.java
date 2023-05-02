@@ -43,12 +43,9 @@ public class SimpleCORSFilter implements Filter {
 	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
 		throws IOException, ServletException {
 
-		log.debug("===>>> SimpleCORSFilter > doFilter()");
-		//HttpServletRequest request = (HttpServletRequest)req;
 		HttpServletResponse response = (HttpServletResponse)res;
 		String originHeader = WebfficeProperties.getProperty("Globals.Allow.Origin");
-		System.out.print("===>>> origin = " + originHeader);
-		log.debug("===>>> origin = " + originHeader);
+		log.info("===>>> origin = " + originHeader);
 
 		if (originHeader != null && !originHeader.equals("")) {
 			originHeader = originHeader.replace("\r", "").replace("\n", "");

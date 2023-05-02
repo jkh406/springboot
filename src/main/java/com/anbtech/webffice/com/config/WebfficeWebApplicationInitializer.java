@@ -11,12 +11,10 @@ import org.springframework.web.WebApplicationInitializer;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.context.support.XmlWebApplicationContext;
-import org.springframework.web.filter.DelegatingFilterProxy;
+import org.springframework.web.multipart.support.MultipartFilter;
 import org.springframework.web.servlet.DispatcherServlet;
 
 import com.anbtech.webffice.com.filter.SimpleCORSFilter;
-//import com.anbtech.webffice.com.security.filter.WebfficeSpringSecurityLoginFilter;
-//import com.anbtech.webffice.com.security.filter.WebfficeSpringSecurityLogoutFilter;
 
 /**
  * @ClassName : WebfficeWebApplicationInitializer.java
@@ -35,13 +33,36 @@ import com.anbtech.webffice.com.filter.SimpleCORSFilter;
  */
 public class WebfficeWebApplicationInitializer implements WebApplicationInitializer {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(WebfficeWebApplicationInitializer.class);
+	private final Logger log = LoggerFactory.getLogger(WebfficeWebApplicationInitializer.class);
 
 	@Override
 	public void onStartup(ServletContext servletContext) throws ServletException {
 
-		LOGGER.debug("WebfficeWebApplicationInitializer START-============================================");
-		System.out.println("##### WebfficeWebApplicationInitializer Start #####");
+		log.info("WebfficeWebApplicationInitializer START-============================================");
+		log.debug("WebfficeWebApplicationInitializer START-============================================");
+		System.out.print("WebfficeWebApplicationInitializer START-============================================");
+
+		// -------------------------------------------------------------
+		// Web ServletContextListener 설정 - System property setting
+		// -------------------------------------------------------------
+		servletContext.addListener(new com.anbtech.webffice.com.config.WebfficeWebServletContextListener());
+		
+        //-------------------------------------------------------------
+        // Spring CharacterEncodingFilter 설정
+        //-------------------------------------------------------------
+        FilterRegistration.Dynamic characterEncoding = servletContext.addFilter("encodingFilter", new org.springframework.web.filter.CharacterEncodingFilter());
+        characterEncoding.setInitParameter("encoding", "UTF-8");
+        characterEncoding.setInitParameter("forceEncoding", "true");
+        characterEncoding.addMappingForUrlPatterns(null, false, "*.do");
+        
+        //-------------------------------------------------------------
+        // Tomcat의 경우 allowCasualMultipartParsing="true" 추가
+        // <Context docBase="" path="/" reloadable="true" allowCasualMultipartParsing="true">
+        //-------------------------------------------------------------
+        MultipartFilter springMultipartFilter = new MultipartFilter();
+        springMultipartFilter.setMultipartResolverBeanName("multipartResolver");
+        FilterRegistration.Dynamic multipartFilter = servletContext.addFilter("springMultipartFilter", springMultipartFilter);
+        multipartFilter.addMappingForUrlPatterns(null, false, "*.do");
 
 		// -------------------------------------------------------------
 		// Spring Root Context 설정
@@ -52,61 +73,18 @@ public class WebfficeWebApplicationInitializer implements WebApplicationInitiali
 		// Spring Servlet Context 설정
 		// -------------------------------------------------------------
 		addWebServletContext(servletContext);
-		
-		//-------------------------------------------------------------
-		// Spring ServletContextListener 설정
-		//-------------------------------------------------------------
-		XmlWebApplicationContext rootContext = new XmlWebApplicationContext();
-		rootContext.setConfigLocations(new String[] { "classpath*:com.anbtech.webffice/spring/com/context-*.xml" });
-		rootContext.refresh();
-		rootContext.start();
-		
-		servletContext.addListener(new ContextLoaderListener(rootContext));
-		
-
-//		if("security".equals(WebfficeProperties.getProperty("Globals.Auth").trim())) {
-//			
-//			//-------------------------------------------------------------
-//			// springSecurityFilterChain 설정
-//			//-------------------------------------------------------------		
-//			FilterRegistration.Dynamic springSecurityFilterChain = servletContext.addFilter("springSecurityFilterChain", new DelegatingFilterProxy());
-//			springSecurityFilterChain.addMappingForUrlPatterns(null, false, "*");
-//
-//			//-------------------------------------------------------------
-//			// HttpSessionEventPublisher 설정
-//			//-------------------------------------------------------------	
-//			servletContext.addListener(new org.springframework.security.web.session.HttpSessionEventPublisher());
-//			
-//			//-------------------------------------------------------------
-//			// WebfficeSpringSecurityLoginFilter 설정
-//			//-------------------------------------------------------------
-//			FilterRegistration.Dynamic egovSpringSecurityLoginFilter = servletContext.addFilter("egovSpringSecurityLoginFilter", new WebfficeSpringSecurityLoginFilter());
-//			//로그인 실패시 반활 될 URL설정
-//			egovSpringSecurityLoginFilter.setInitParameter("loginURL", "http://localhost:3000");
-//			//로그인 처리 URL설정
-//			egovSpringSecurityLoginFilter.setInitParameter("loginProcessURL", "http://localhost:3000");
-//			//처리 Url Pattern
-//			egovSpringSecurityLoginFilter.addMappingForUrlPatterns(null, false, "*.do");
-//			
-//			//-------------------------------------------------------------
-//			// EgovSpringSecurityLogoutFilter 설정
-//			//-------------------------------------------------------------	
-//			FilterRegistration.Dynamic egovSpringSecurityLogoutFilter = servletContext.addFilter("egovSpringSecurityLogoutFilter", new WebfficeSpringSecurityLogoutFilter());
-//			egovSpringSecurityLogoutFilter.addMappingForUrlPatterns(null, false, "/uat/uia/actionLogout.do");
-//		
-//		}
-
-		// -------------------------------------------------------------
-		// Egov Web ServletContextListener 설정 - System property setting
-		// -------------------------------------------------------------
-		servletContext.addListener(new com.anbtech.webffice.com.config.WebfficeWebServletContextListener());
 
 		// -------------------------------------------------------------
 		// 필터설정
 		// -------------------------------------------------------------
 		addFilters(servletContext);
+		
+		//-------------------------------------------------------------
+		// Spring RequestContextListener 설정
+		//-------------------------------------------------------------
+		servletContext.addListener(new org.springframework.web.context.request.RequestContextListener());
 
-		LOGGER.debug("WebfficeWebApplicationInitializer END-============================================");
+		log.info("WebfficeWebApplicationInitializer END-============================================");
 	}
 
 	/**
@@ -147,15 +125,16 @@ public class WebfficeWebApplicationInitializer implements WebApplicationInitiali
 	 */
 
 	private void addWebServletContext(ServletContext servletContext) {
-	AnnotationConfigWebApplicationContext webApplicationContext = new
-	AnnotationConfigWebApplicationContext();
-	webApplicationContext.register(WebfficeConfigWebDispatcherServlet.class);
-	
-	ServletRegistration.Dynamic dispatcher = servletContext.addServlet("action",
-	new DispatcherServlet(webApplicationContext));
-	dispatcher.setLoadOnStartup(1);
-	
-	dispatcher.addMapping("*.do"); }
+		AnnotationConfigWebApplicationContext webApplicationContext = new
+		AnnotationConfigWebApplicationContext();
+		webApplicationContext.register(WebfficeConfigWebDispatcherServlet.class);
+		
+		ServletRegistration.Dynamic dispatcher = servletContext.addServlet("action",
+		new DispatcherServlet(webApplicationContext));
+		dispatcher.setLoadOnStartup(1);
+		
+		dispatcher.addMapping("*.do"); 
+	}
 	
 	/**
 	 * @param servletContext

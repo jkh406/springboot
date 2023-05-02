@@ -51,6 +51,7 @@ public class WebfficeConfigWebDispatcherServlet implements WebMvcConfigurer {
 				"/uat/uia/actionLogin.do",
 				"/uat/uia/actionLoginAPI.do",
 				"/uat/uia/actionLoginJWT.do",
+				"/uat/uia/actionSecurityLogin.do",
 				"/uat/uia/egovLoginUsr.do",
 				"/uat/uia/egovLoginUsrAPI.do",
 				"/uat/uia/actionLogoutAPI.do"
